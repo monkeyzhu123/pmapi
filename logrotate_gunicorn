@@ -1,0 +1,13 @@
+/var/log/gunicorn*{
+    daily
+    dateext
+    missingok
+    rotate 10
+    compress
+    notifempty
+    sharedscripts
+    postrotate
+            [ -f /var/run/gunicorn.pid ] && kill -USR1 `cat /var/run/gunicorn.pid`
+    endscript
+
+}
