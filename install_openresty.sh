@@ -3,7 +3,7 @@
 cat  <<EOF >/etc/yum.repos.d/OpenResty.repo 
 [openresty]
 name=Official OpenResty Repository
-baseurl=https://openresty.org/yum/openresty/openresty/epel-$releasever-$basearch/
+baseurl=https://openresty.org/yum/openresty/openresty/epel-\$releasever-\$basearch/
 skip_if_unavailable=True
 gpgcheck=1
 gpgkey=https://copr-be.cloud.fedoraproject.org/results/openresty/openresty/pubkey.gpg
