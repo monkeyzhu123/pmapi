@@ -38,6 +38,10 @@ def get_true_url():
         url = result.headers['Location']
     except Exception, e:
         response = make_response(jsonify({'status': 500, 'message': e.message}))
+        response.headers['Access-Control-Allow-Origin'] = 'http://pm.yunwangke.com'
+        response.headers['Access-Control-Allow-Methods'] = 'POST,GET'
+        response.headers['Access-Control-Allow-Headers'] = 'x-requested-with,content-type'
+        return response
 
     response = make_response(jsonify({
         'status': result.status_code,
@@ -52,23 +56,33 @@ def get_true_url():
 def get_baidu_url_content():
     url = request.args.get('url')
     headers = {
-        'User-Agent': select_user_agent()
+        'User-Agent': select_user_agent(),
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, sdch, br',
+        'Accept-Language': 'zh-CN,zh;q=0.8,en;q=0.6',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Cookie': 'BAIDUID=FB798CC753E51492B152DF8749E3D83A:FG=1; PSTM=1489731864; BIDUPSID=5D21609712C498AB54C72D277B060DD6; B64_BOT=1; BD_HOME=0; BD_UPN=12314353; H_PS_645EC=36fdXIOuwppojFeEvyNP2vXM1litJoWrgjCHs4cJOqBz0%2FDbOWP4aLpbb94; BDORZ=B490B5EBF6F3CD402E515D22BCDA1598; BD_CK_SAM=1; PSINO=3; BDSVRTM=53; H_PS_PSSID=22162_1425_21114_22035_22176_20927',
+        'Host': 'www.baidu.com',
+        'Pragma': 'no-cache',
+        'Upgrade-Insecure-Requests': '1',
     }
     try:
         result = requests.get(url, headers=headers)
+        soup = BeautifulSoup(result.content, 'html.parser')
+        content = soup.find(id="content_left")
+        b = re.sub(r'src=\"http://(i\d+?\.baidu\.com|bdimg.com|t\d+?\.baidu\.com).+?\"', '', str(content))
+        response = make_response(jsonify({'status': result.status_code, 'content': b}))
     except Exception, e:
-        response = make_response(jsonify({'status': 500, 'message': e.message}))
-        response.headers['Access-Control-Allow-Origin'] = 'http://pm.yunwangke.com'
-        response.headers['Access-Control-Allow-Methods'] = 'POST,GET'
-        response.headers['Access-Control-Allow-Headers'] = 'x-requested-with,content-type'
-        return response
-
-    soup = BeautifulSoup(result.content, 'html.parser')
-    content = soup.find(id="content_left")
-    b = re.sub(r'src=\"http://(i\d+?\.baidu\.com|bdimg.com|t\d+?\.baidu\.com).+?\"', '', str(content))
-    response = make_response(jsonify({
-        'status': result.status_code,
-        'content': b}))
+        try:
+            url = re.sub(r'^https://', 'http://', url)
+            result = requests.get(url, headers=headers)
+            soup = BeautifulSoup(result.content, 'html.parser')
+            content = soup.find(id="content_left")
+            b = re.sub(r'src=\"http://(i\d+?\.baidu\.com|bdimg.com|t\d+?\.baidu\.com).+?\"', '', str(content))
+            response = make_response(jsonify({'status': result.status_code, 'content': b}))
+        except Exception, e:
+            response = make_response(jsonify({'status': 500, 'message': e.message}))
     response.headers['Access-Control-Allow-Origin'] = 'http://pm.yunwangke.com'
     response.headers['Access-Control-Allow-Methods'] = 'POST,GET'
     response.headers['Access-Control-Allow-Headers'] = 'x-requested-with,content-type'

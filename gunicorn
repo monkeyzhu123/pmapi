@@ -2,7 +2,7 @@
 . /etc/rc.d/init.d/functions
 
 GUNICORN=/usr/bin/gunicorn
-ROOT=/root/appidb9maa9b7df
+ROOT=/root/pmapi
 PID=/var/run/gunicorn.pid
 CONF=$ROOT/gunicorn.py
 cd $ROOT
