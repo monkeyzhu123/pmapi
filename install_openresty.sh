@@ -12,4 +12,3 @@ enabled_metadata=1
 EOF
 yum --disablerepo="*" --enablerepo="openresty" list available
 yum -y install openresty
-cd /
