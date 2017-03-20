@@ -87,7 +87,6 @@ def get_baidu_url_content():
         response = make_response(jsonify({'status': status_code, 'content': content}))
     except Exception, e:
         try:
-            print "retry request:wq"
             url = re.sub(r'^https://', 'http://', url)
             status_code, content = get_id_content_left_for_baidu_search_page(url, headers)
             response = make_response(jsonify({'status': status_code, 'content': content}))
