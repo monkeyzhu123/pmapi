@@ -27,7 +27,7 @@ def get_id_content_left_for_baidu_search_page(url=None, headers=None):
     content = soup.find(id="content_left")
     if not content:
         raise ValueError
-    post_content = re.sub(r'src=\"http://(i\d+?\.baidu\.com|bdimg.com|t\d+?\.baidu\.com).+?\"', '', str(content))
+    post_content = re.sub(r'src=\"http://(i\d+?\.baidu\.com|bdimg.com|t\d+?\.baidu\.com|ss\d+?\.baidu\.com).+?\"', '', str(content))
     return result.status_code, post_content
 
 
