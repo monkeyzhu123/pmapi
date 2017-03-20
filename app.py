@@ -25,6 +25,8 @@ def get_id_content_left_for_baidu_search_page(url=None, headers=None):
     result = requests.get(url, headers=headers)
     soup = BeautifulSoup(result.content, 'html.parser')
     content = soup.find(id="content_left")
+    if not content:
+        raise ValueError
     post_content = re.sub(r'src=\"http://(i\d+?\.baidu\.com|bdimg.com|t\d+?\.baidu\.com).+?\"', '', str(content))
     return result.status_code, post_content
 
@@ -82,11 +84,10 @@ def get_baidu_url_content():
     }
     try:
         status_code, content = get_id_content_left_for_baidu_search_page(url, headers)
-        if len(content) == 4:
-            raise ValueError
         response = make_response(jsonify({'status': status_code, 'content': content}))
     except Exception, e:
         try:
+            print "retry request:wq"
             url = re.sub(r'^https://', 'http://', url)
             status_code, content = get_id_content_left_for_baidu_search_page(url, headers)
             response = make_response(jsonify({'status': status_code, 'content': content}))
