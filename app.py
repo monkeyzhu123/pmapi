@@ -77,7 +77,6 @@ def get_baidu_url_content():
         'Accept-Language': 'zh-CN,zh;q=0.8,en;q=0.6',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
-        'Cookie': 'BAIDUID=FB798CC753E51492B152DF8749E3D83A:FG=1; PSTM=1489731864; BIDUPSID=5D21609712C498AB54C72D277B060DD6; B64_BOT=1; BD_HOME=0; BD_UPN=12314353; H_PS_645EC=36fdXIOuwppojFeEvyNP2vXM1litJoWrgjCHs4cJOqBz0%2FDbOWP4aLpbb94; BDORZ=B490B5EBF6F3CD402E515D22BCDA1598; BD_CK_SAM=1; PSINO=3; BDSVRTM=53; H_PS_PSSID=22162_1425_21114_22035_22176_20927',
         'Host': 'www.baidu.com',
         'Pragma': 'no-cache',
         'Upgrade-Insecure-Requests': '1',
