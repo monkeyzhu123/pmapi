@@ -1,3 +1,4 @@
+# coding:utf8
 from flask import Flask, request
 import requests
 import re
@@ -17,6 +18,15 @@ def select_user_agent(file_name='user-agents.txt'):
             continue
         line = aline.replace('\n', '')
     return line
+
+
+def get_id_content_left_for_baidu_search_page(url=None, headers=None):
+    '''    获得百度搜索结果页中id=content_left的网页内容    '''
+    result = requests.get(url, headers=headers)
+    soup = BeautifulSoup(result.content, 'html.parser')
+    content = soup.find(id="content_left")
+    post_content = re.sub(r'src=\"http://(i\d+?\.baidu\.com|bdimg.com|t\d+?\.baidu\.com).+?\"', '', str(content))
+    return result.status_code, post_content
 
 
 @app.route('/')
@@ -55,6 +65,9 @@ def get_true_url():
 @app.route('/get_baidu_url_content', methods=['GET'])
 def get_baidu_url_content():
     url = request.args.get('url')
+    if not url:
+        response = {'status': 500, 'message': 'error'}
+        return jsonify(response)
     headers = {
         'User-Agent': select_user_agent(),
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -68,19 +81,15 @@ def get_baidu_url_content():
         'Upgrade-Insecure-Requests': '1',
     }
     try:
-        result = requests.get(url, headers=headers)
-        soup = BeautifulSoup(result.content, 'html.parser')
-        content = soup.find(id="content_left")
-        b = re.sub(r'src=\"http://(i\d+?\.baidu\.com|bdimg.com|t\d+?\.baidu\.com).+?\"', '', str(content))
-        response = make_response(jsonify({'status': result.status_code, 'content': b}))
+        status_code, content = get_id_content_left_for_baidu_search_page(url, headers)
+        if len(content) == 4:
+            raise ValueError
+        response = make_response(jsonify({'status': status_code, 'content': content}))
     except Exception, e:
         try:
             url = re.sub(r'^https://', 'http://', url)
-            result = requests.get(url, headers=headers)
-            soup = BeautifulSoup(result.content, 'html.parser')
-            content = soup.find(id="content_left")
-            b = re.sub(r'src=\"http://(i\d+?\.baidu\.com|bdimg.com|t\d+?\.baidu\.com).+?\"', '', str(content))
-            response = make_response(jsonify({'status': result.status_code, 'content': b}))
+            status_code, content = get_id_content_left_for_baidu_search_page(url, headers)
+            response = make_response(jsonify({'status': status_code, 'content': content}))
         except Exception, e:
             response = make_response(jsonify({'status': 500, 'message': e.message}))
     response.headers['Access-Control-Allow-Origin'] = 'http://pm.yunwangke.com'
