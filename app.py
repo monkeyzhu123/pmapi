@@ -5,6 +5,9 @@ import re
 from bs4 import BeautifulSoup
 import random
 from flask import jsonify, make_response
+import urllib2
+from lxml import etree
+
 
 app = Flask(__name__)
 app.debug = False
@@ -27,7 +30,8 @@ def get_id_content_left_for_baidu_search_page(url=None, headers=None):
     content = soup.find(id="content_left")
     if not content:
         raise ValueError
-    post_content = re.sub(r'src=\"http://(i\d+?\.baidu\.com|bdimg.com|t\d+?\.baidu\.com|ss\d+?\.baidu\.com).+?\"', '', str(content))
+    post_content = re.sub(r'src=\"http://(i\d+?\.baidu\.com|bdimg.com|t\d+?\.baidu\.com|ss\d+?\.baidu\.com).+?\"', '',
+                          str(content))
     return result.status_code, post_content
 
 
@@ -91,6 +95,80 @@ def get_baidu_url_content():
             response = make_response(jsonify({'status': status_code, 'content': content}))
         except Exception, e:
             response = make_response(jsonify({'status': 500, 'message': e.message}))
+    response.headers['Access-Control-Allow-Origin'] = 'http://pm.yunwangke.com'
+    response.headers['Access-Control-Allow-Methods'] = 'POST,GET'
+    response.headers['Access-Control-Allow-Headers'] = 'x-requested-with,content-type'
+    return response
+
+
+@app.route('/get_ranking_and_url', methods=['GET', 'POST'])
+def get_ranking_and_url():
+    url = request.args.get('url')
+    print url
+    search_engine_type = request.args.get('search_engine_type')
+    if not url:
+        response = {'status': 500, 'message': 'error'}
+        return jsonify(response)
+    headers = {
+        'User-Agent': select_user_agent(),
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, sdch, br',
+        'Accept-Language': 'zh-CN,zh;q=0.8,en;q=0.6',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Pragma': 'no-cache',
+        'Upgrade-Insecure-Requests': '1',
+    }
+    content_list = []
+    count_timer = 0
+    news_count_timer = 100
+
+    if search_engine_type == "sogou":
+        result = requests.get(url + "&num=30", headers=headers)
+        selector = etree.HTML(result.content)
+        for current_xpath in selector.xpath('//div[@class="results"]//div[@class="fb"]'):
+            count_timer = count_timer + 1
+            content_dict = {}
+            re_rule = 'a/@href'
+            pre_url = current_xpath.xpath(re_rule)[0]
+            true_url = urllib2.unquote(re.findall(r"url=(.+?)&", pre_url)[0])
+            content_dict['true_url'] = true_url
+            content_dict['ranking'] = count_timer
+            content_list.append(content_dict)
+    elif search_engine_type == "360so":
+        for page in range(1, 4):
+            try:
+                result = requests.get(url + "&pn=" + str(page), headers=headers)
+                print result.url
+                selector = etree.HTML(result.content)
+                for current_xpath in selector.xpath('//ul[@class="result"]/li[@class="res-list"]'):
+                    print "li"
+                    try:
+                        count_timer = count_timer + 1
+                        content_dict = {}
+                        re_rule = 'h3/a/@href'
+                        pre_url = current_xpath.xpath(re_rule)[0]
+                        true_url = urllib2.unquote(re.findall(r"url=(.+?)&", pre_url)[0])
+                        content_dict['true_url'] = true_url
+                        content_dict['ranking'] = count_timer
+                        print count_timer
+                        content_list.append(content_dict)
+                    except IndexError:
+                        for pre_url in current_xpath.xpath('*//p/a/@href'):
+                            content_dict = {}
+                            print pre_url
+                            try:
+                                true_url = urllib2.unquote(re.findall(r"url=(.+?)&", pre_url)[0])
+                            except IndexError:
+                                continue
+                            news_count_timer = news_count_timer + 1
+                            content_dict['true_url'] = true_url
+                            content_dict['ranking'] = news_count_timer
+                            content_list.append(content_dict)
+            except Exception, e:
+                print e.message
+                continue
+    response = make_response(jsonify({'status': 200, 'content': content_list}))
     response.headers['Access-Control-Allow-Origin'] = 'http://pm.yunwangke.com'
     response.headers['Access-Control-Allow-Methods'] = 'POST,GET'
     response.headers['Access-Control-Allow-Headers'] = 'x-requested-with,content-type'
