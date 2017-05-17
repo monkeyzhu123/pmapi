@@ -9,7 +9,6 @@ import urllib2
 from lxml import etree
 import time
 
-
 app = Flask(__name__)
 app.debug = False
 
@@ -132,27 +131,29 @@ def get_ranking_and_url():
     }
     content_list = []
     count_timer = 0
-    news_count_timer = 100
 
     if search_engine_type == "sogou":
         time.sleep(1)
         headers['Host'] = "www.sogou.com"
-        headers['Cookie'] = '''	
-SUID=88E0D8AB80430E0A00000000522932D8; SUV=1378431703727616; SMYUV=1378431713141522; ssuid=9930978344
-; pgv_pvi=2056938496; IPLOC=CN5101; sct=22; usid=_oy9Hm8LczK4fWe3; wuid=AAEaBy2eEgAAAAqSNjIEzgMAkwA=
-; CXID=FEF28FEB003EC0A942171FC383D41B88; SNUID=A8C13E1CABAEE596BCD57F1FABE68C0D; ad=U2VLSkllll2YE4yVlllllV6JzSylllllHISrlZllllwllllllZlll5
-@@@@@@@@@@; ABTEST=0|1494494327|v17; browerV=2; osV=1; PHPSESSID=s9hmiegfgvtrcfdon66pnuce05; SUIR=2E46B89A2D286DF59DD38DB42DDFCE70
-; seccodeRight=success; successCount=1|Thu, 11 May 2017 09:24:44 GMT; ld=Pkllllllll2BVjhflllllV6UanolllllHISrlZllllYllllljZGll5
-@@@@@@@@@@; taspeed=taspeedexist; pgv_si=s1630076928; sst0=325; LSTMV=666%2C418; LCLKINT=693'''
-        result = requests.get(url + "&num=30", headers=headers)
+        cookies = {
+            'ld': "XZllllllll2BVRahlllllV6UyM6lllllaUemLklllltllllljZlll5@@@@@@@@@@",
+            'path': "/",
+            'expires': "Sat, 10 Jun 2017 10:58:49 GMT",
+            'domain': ".sogou.com",
+        }
+        result = requests.get(url + "&num=30", headers=headers, cookies=cookies)
         print result.content
         print result.url
         selector = etree.HTML(result.content)
-        for current_xpath,title_xpath in zip(selector.xpath('//div[@class="results"]//div[@class="fb"]'),selector.xpath('//div[@class="results"]//h3')):
+        for current_xpath, title_xpath in zip(selector.xpath('//div[@class="results"]//div[@class="fb"]'),
+                                              selector.xpath('//div[@class="results"]//h3')):
             count_timer = count_timer + 1
             content_dict = {}
             re_rule = 'a/@href'
-            pre_url = current_xpath.xpath(re_rule)[0]
+            try:
+                pre_url = current_xpath.xpath(re_rule)[0]
+            except IndexError:
+                continue
             title = "".join(title_xpath.xpath('a//text()'))
             true_url = urllib2.unquote(re.findall(r"url=(.+?)&", pre_url)[0])
             content_dict['true_url'] = true_url
@@ -180,7 +181,8 @@ SUID=88E0D8AB80430E0A00000000522932D8; SUV=1378431703727616; SMYUV=1378431713141
                         content_dict['title'] = "".join(current_xpath.xpath(title_rule))
                         content_list.append(content_dict)
                     except IndexError:
-                        for pre_url,title in zip(current_xpath.xpath('*//p/a/@href'),current_xpath.xpath('*//p/a//text()')):
+                        for pre_url, title in zip(current_xpath.xpath('*//p/a/@href'),
+                                                  current_xpath.xpath('*//p/a//text()')):
                             content_dict = {}
                             print pre_url
                             try:
@@ -195,6 +197,7 @@ SUID=88E0D8AB80430E0A00000000522932D8; SUV=1378431703727616; SMYUV=1378431713141
                 print e.message
                 continue
     elif search_engine_type == "baidu":
+        time.sleep(1)
         headers['Host'] = "www.baidu.com"
         result = requests.get(url + "&rn=30", headers=headers)
         selector = etree.HTML(result.content)
@@ -202,23 +205,38 @@ SUID=88E0D8AB80430E0A00000000522932D8; SUV=1378431703727616; SMYUV=1378431713141
                 '//div[@id="content_left"]/div[contains(@tpl, "se_com_default") or contains(@tpl, "sp_realtime_bigpic5")]'):
             if current_xpath.xpath('@tpl')[0] == "sp_realtime_bigpic5":
                 for next_xpath in current_xpath.xpath('*//div[@class="c-gap-bottom-small" or @class="c-row"]'):
-                    print "next_xpath"
                     re_rule = 'a/@href'
                     content_dict = {}
                     pre_url = next_xpath.xpath(re_rule)[0]
                     title = "".join(next_xpath.xpath('a//text()'))
-                    content_dict['true_url'] = pre_url
+                    # type 2 is baidu news search result
+                    content_dict['type'] = 2
+                    content_dict['baidu_index_url'] = pre_url
                     content_dict['ranking'] = current_xpath.xpath('@id')[0]
                     content_dict['title'] = clean_str_for_line_break(title)
+                    try:
+                        result = requests.head(url=pre_url, headers=headers)
+                        url = result.headers['Location']
+                    except:
+                        continue
+                    content_dict['domain'] = url
                     content_list.append(content_dict)
             elif current_xpath.xpath('@tpl')[0] == "se_com_default":
+
                 re_rule = 'h3/a/@href'
                 content_dict = {}
                 pre_url = current_xpath.xpath(re_rule)[0]
                 title = "".join(current_xpath.xpath('h3/a//text()'))
-                content_dict['true_url'] = pre_url
+                # type 1 is normal search result
+                content_dict['type'] = 1
+                content_dict['baidu_index_url'] = pre_url
                 content_dict['ranking'] = current_xpath.xpath('@id')[0]
                 content_dict['title'] = title
+                try:
+                    content_dict['domain'] = \
+                    "".join(current_xpath.xpath('div//a[@class="c-showurl"]//text()')).split("/")[0]
+                except:
+                    content_dict['domain'] = "".join(current_xpath.xpath('div//a[@class="c-showurl"]//text()'))
                 content_list.append(content_dict)
     response = make_response(jsonify({'status': 200, 'content': content_list}))
     response.headers['Access-Control-Allow-Origin'] = 'http://pm.yunwangke.com'
