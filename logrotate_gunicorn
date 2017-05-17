@@ -1,4 +1,6 @@
-/var/log/gunicorn*{
+/var/log/gunicorn_error.log
+/var/log/gunicorn.log
+{
     daily
     dateext
     missingok
@@ -7,7 +9,7 @@
     notifempty
     sharedscripts
     postrotate
-            [ -f /var/run/gunicorn.pid ] && kill -USR1 `cat /var/run/gunicorn.pid`
+            [ -f /var/run/gunicorn.pid ] && /etc/init.d/gunicorn reload`
     endscript
 
 }
