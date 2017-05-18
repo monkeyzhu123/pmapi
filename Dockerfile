@@ -1,6 +1,6 @@
-FROM pmpai_base
+FROM pmapi_base
 ADD . /data/
 WORKDIR /data/
 RUN pip install -r requirements.txt
 ENTRYPOINT /bin/bash start_gunicorn.sh
-EXPOSE 5000
+EXPOSE 5001
