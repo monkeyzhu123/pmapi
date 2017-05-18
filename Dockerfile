@@ -1,4 +1,4 @@
-FROM 10.251.48.231:5000/pmapi
+FROM pmapi
 ADD . /data/
 WORKDIR /data/
 RUN pip install -r requirements.txt
