@@ -6,7 +6,7 @@ touch /tmp/access.log
 
 # Start Gunicorn processes
 echo Starting Gunicorn...
-exec /usr/bin/gunicorn app:app \
+/usr/bin/gunicorn app:app \
         --bind 0.0.0.0:5001 \
         --workers 4 \
         --log-level=info \
