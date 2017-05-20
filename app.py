@@ -10,7 +10,7 @@ from lxml import etree
 import time
 
 app = Flask(__name__)
-app.debug = False
+app.debug = True
 
 
 def clean_str_for_line_break(pre_str):
