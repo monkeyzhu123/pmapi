@@ -113,9 +113,9 @@ def get_baidu_url_content():
 @app.route('/get_ranking_and_url', methods=['GET', 'POST'])
 def get_ranking_and_url():
     url = request.args.get('url')
-    print url
+    # print url
     search_engine_type = request.args.get('search_engine_type')
-    print search_engine_type
+    # print search_engine_type
     if not url:
         response = {'status': 500, 'message': 'error'}
         return jsonify(response)
