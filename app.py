@@ -133,15 +133,15 @@ def get_ranking_and_url():
     count_timer = 0
 
     if search_engine_type == "sogou":
-        cookies = {}
-        with open('sogou_cookie.txt','r') as f:
-            for line in f.read().split(';'):
-                name, value = line.strip().split('=', 1)
-                cookies[name] = value
+        # cookies = {}
+        # with open('sogou_cookie.txt','r') as f:
+        #     for line in f.read().split(';'):
+        #         name, value = line.strip().split('=', 1)
+        #         cookies[name] = value
         time.sleep(1)
         headers['Host'] = "www.sogou.com"
-        headers['Referer'] = "https://www.sogou.com/"
-        result = requests.get(url + "&num=30", headers=headers, cookies=cookies)
+        headers['Referer'] = "http://www.sogou.com/"
+        result = requests.get(url + "&num=30", headers=headers)
         print result.content
         print result.url
         selector = etree.HTML(result.content)
