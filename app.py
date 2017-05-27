@@ -138,7 +138,7 @@ def get_ranking_and_url():
         #     for line in f.read().split(';'):
         #         name, value = line.strip().split('=', 1)
         #         cookies[name] = value
-        time.sleep(1)
+        time.sleep(3)
         headers['Host'] = "www.sogou.com"
         headers['Referer'] = "http://www.sogou.com/"
         result = requests.get(url + "&num=30", headers=headers)
@@ -161,14 +161,13 @@ def get_ranking_and_url():
             content_dict['title'] = title
             content_list.append(content_dict)
     elif search_engine_type == "360so":
+        time.sleep(1)
         headers['Host'] = "www.so.com"
         for page in range(1, 4):
             try:
                 result = requests.get(url + "&pn=" + str(page), headers=headers)
-                print result.url
                 selector = etree.HTML(result.content)
                 for current_xpath in selector.xpath('//ul[@class="result"]/li[@class="res-list"]'):
-                    print "li"
                     try:
                         count_timer = count_timer + 1
                         content_dict = {}
@@ -181,17 +180,20 @@ def get_ranking_and_url():
                         content_dict['title'] = "".join(current_xpath.xpath(title_rule))
                         content_list.append(content_dict)
                     except IndexError:
-                        for pre_url, title in zip(current_xpath.xpath('*//p/a/@href'),
-                                                  current_xpath.xpath('*//p/a//text()')):
+                        # news parts
+                        news_part = current_xpath.xpath('*//p[contains(@class, "mh-position") or @class="gclearfix"]')
+                        for i in news_part:
+                            pre_url = "".join(i.xpath('a/@href'))
+                            title = "".join(i.xpath('a//text()'))
                             content_dict = {}
-                            print pre_url
+                            print pre_url, title
                             try:
                                 true_url = urllib2.unquote(re.findall(r"url=(.+?)&", pre_url)[0])
                             except IndexError:
                                 continue
                             content_dict['true_url'] = true_url
                             content_dict['ranking'] = count_timer
-                            content_dict['title'] = "".join(title)
+                            content_dict['title'] = title
                             content_list.append(content_dict)
             except Exception, e:
                 print e.message
