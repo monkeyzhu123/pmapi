@@ -235,8 +235,6 @@ def get_ranking_and_url():
     elif search_engine_type == "sm":
         headers['Host'] = "yz.m.sm.cn"
         result = requests.get(url + "&num=20", headers=headers)
-        print result.url
-        print result.content.decode('utf-8')
         selector = etree.HTML(result.content.decode('utf-8'))
         for current_xpath in selector.xpath('//div[@class="article ali_row"]'):
             count_timer = count_timer + 1
