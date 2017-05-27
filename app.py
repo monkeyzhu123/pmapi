@@ -133,17 +133,10 @@ def get_ranking_and_url():
     count_timer = 0
 
     if search_engine_type == "sogou":
-        # cookies = {}
-        # with open('sogou_cookie.txt','r') as f:
-        #     for line in f.read().split(';'):
-        #         name, value = line.strip().split('=', 1)
-        #         cookies[name] = value
         time.sleep(3)
         headers['Host'] = "www.sogou.com"
         headers['Referer'] = "http://www.sogou.com/"
         result = requests.get(url + "&num=30", headers=headers)
-        print result.content
-        print result.url
         selector = etree.HTML(result.content)
         for current_xpath, title_xpath in zip(selector.xpath('//div[@class="results"]//div[@class="fb"]'),
                                               selector.xpath('//div[@class="results"]//h3')):
@@ -186,7 +179,6 @@ def get_ranking_and_url():
                             pre_url = "".join(i.xpath('a/@href'))
                             title = "".join(i.xpath('a//text()'))
                             content_dict = {}
-                            print pre_url, title
                             try:
                                 true_url = urllib2.unquote(re.findall(r"url=(.+?)&", pre_url)[0])
                             except IndexError:
@@ -240,6 +232,27 @@ def get_ranking_and_url():
                 except:
                     content_dict['domain'] = "".join(current_xpath.xpath('div//a[@class="c-showurl"]//text()'))
                 content_list.append(content_dict)
+    elif search_engine_type == "sm":
+        headers['Host'] = "yz.m.sm.cn"
+        result = requests.get(url + "&num=20", headers=headers)
+        print result.url
+        print result.content.decode('utf-8')
+        selector = etree.HTML(result.content.decode('utf-8'))
+        for current_xpath in selector.xpath('//div[@class="article ali_row"]'):
+            count_timer = count_timer + 1
+            content_dict = {}
+            url_rule = 'h2/a/@href'
+            title_rule = 'h2/a//text()'
+            try:
+                pre_url = current_xpath.xpath(url_rule)[0]
+                title = "".join(current_xpath.xpath(title_rule))
+            except IndexError:
+                continue
+
+            content_dict['true_url'] = pre_url
+            content_dict['ranking'] = count_timer
+            content_dict['title'] = title
+            content_list.append(content_dict)
     response = make_response(jsonify({'status': 200, 'content': content_list}))
     response.headers['Access-Control-Allow-Origin'] = 'http://pm.yunwangke.com'
     response.headers['Access-Control-Allow-Methods'] = 'POST,GET'
