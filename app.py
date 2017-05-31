@@ -153,7 +153,7 @@ def get_ranking_and_url():
             content_dict['ranking'] = count_timer
             content_dict['title'] = title
             content_list.append(content_dict)
-    elif search_engine_type == "360so":
+    elif search_engine_type == "qihu":
         time.sleep(1)
         headers['Host'] = "www.so.com"
         for page in range(1, 4):
