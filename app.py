@@ -253,20 +253,17 @@ def get_ranking_and_url():
             content_list.append(content_dict)
     elif search_engine_type == "m_baidu":
         headers['Host'] = "m.baidu.com"
-        result = requests.get(url, headers=headers)
-        selector = etree.HTML(result.content)
-        for current_xpath in selector.xpath('//div[@tpl="www_normal"]'):
-
-            content_dict = {}
-            pre_url = current_xpath.xpath('div[@class="c-container"]/a/@href')[0]
-            title = "".join(current_xpath.xpath('div[@class="c-container"]/a/h3//text()'))
-            # type 1 is normal search result
-            content_dict['type'] = 1
-            content_dict['baidu_index_url'] = pre_url
-            content_dict['ranking'] = current_xpath.xpath('@order')[0]
-            content_dict['title'] = title
-            content_dict['domain'] = eval(current_xpath.xpath('@data-log')[0])['mu']
-            content_list.append(content_dict)
+        for pn in range(0,21,10):
+            result = requests.get(url + "&pn=" + str(pn), headers=headers)
+            selector = etree.HTML(result.content)
+            for current_xpath in selector.xpath('//div[@tpl="www_normal"]'):
+                content_dict = {}
+                title = "".join(current_xpath.xpath('div[@class="c-container"]/a/h3//text()'))
+                # type 1 is normal search result
+                content_dict['ranking'] = str(int(current_xpath.xpath('@order')[0])+pn)
+                content_dict['title'] = title
+                content_dict['true_url'] = eval(current_xpath.xpath('@data-log')[0])['mu']
+                content_list.append(content_dict)
     response = make_response(jsonify({'status': 200, 'content': content_list}))
     response.headers['Access-Control-Allow-Origin'] = 'http://pm.yunwangke.com'
     response.headers['Access-Control-Allow-Methods'] = 'POST,GET'
