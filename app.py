@@ -8,6 +8,7 @@ from flask import jsonify, make_response
 import urllib2
 from lxml import etree
 import time
+import os
 import json
 
 app = Flask(__name__)
@@ -32,6 +33,14 @@ def select_user_agent(file_name='user-agents.txt'):
         line = aline.replace('\n', '')
     return line
 
+
+def create_request_cookie(cookie_file):
+    cookies = {}
+    with open(cookie_file, 'r') as f:
+        for line in f.readlines().split(';'):
+            name, value = line.strip().split('=', 1)
+            cookies[name] = value
+    return cookies
 
 def get_id_content_left_for_baidu_search_page(url=None, headers=None):
     '''    获得百度搜索结果页中id=content_left的网页内容    '''
@@ -234,7 +243,23 @@ def get_ranking_and_url():
                 content_list.append(content_dict)
     elif search_engine_type == "sm":
         headers['Host'] = "yz.m.sm.cn"
-        result = requests.get(url + "&num=20", headers=headers)
+        if os.path.exists('sm_cookie'):
+            cookies = create_request_cookie('sm_cookie')
+            result = requests.get(url + "&num=20", headers=headers, cookies=cookies)
+            if len(result.content) < 200:
+                with open('sm_cookie', 'wb') as f:
+                    f.write(re.findall(r'cookie=\"(.+?)\"', result.content)[0])
+                cookies = create_request_cookie('sm_cookie')
+                result = requests.get(url + "&num=20", headers=headers, cookies=cookies)
+
+        else:
+            result = requests.get(url + "&num=20", headers=headers)
+            if len(result.content) < 200:
+                with open('sm_cookie', 'wb') as f:
+                    f.write(re.findall(r'cookie=\"(.+?)\"', result.content)[0])
+                cookies = create_request_cookie('sm_cookie')
+                result = requests.get(url + "&num=20", headers=headers, cookies=cookies)
+
         selector = etree.HTML(result.content.decode('utf-8'))
         for current_xpath in selector.xpath('//div[@class="article ali_row"]'):
             count_timer = count_timer + 1
