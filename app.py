@@ -37,7 +37,7 @@ def select_user_agent(file_name='user-agents.txt'):
 def create_request_cookie(cookie_file):
     cookies = {}
     with open(cookie_file, 'r') as f:
-        for line in f.readlines().split(';'):
+        for line in f.readline().split(';'):
             name, value = line.strip().split('=', 1)
             cookies[name] = value
     return cookies
