@@ -143,7 +143,6 @@ def get_ranking_and_url():
     count_timer = 0
 
     if search_engine_type == "sogou":
-        time.sleep(3)
         headers['Host'] = "www.sogou.com"
         headers['Referer'] = "http://www.sogou.com/"
         result = requests.get(url + "&num=30", headers=headers)
@@ -200,7 +199,6 @@ def get_ranking_and_url():
                 print e.message
                 continue
     elif search_engine_type == "baidu":
-        time.sleep(1)
         headers['Host'] = "www.baidu.com"
         result = requests.get(url + "&rn=30", headers=headers)
         selector = etree.HTML(result.content)
