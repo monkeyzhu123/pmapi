@@ -242,8 +242,12 @@ def get_ranking_and_url():
     elif search_engine_type == "sm":
         headers['Host'] = "yz.m.sm.cn"
         if os.path.exists('sm_cookie'):
-            cookies = create_request_cookie('sm_cookie')
-            result = requests.get(url + "&num=20", headers=headers, cookies=cookies)
+            try:
+                cookies = create_request_cookie('sm_cookie')
+                result = requests.get(url + "&num=20", headers=headers, cookies=cookies)
+            except:
+                result = requests.get(url + "&num=20", headers=headers)
+
             if len(result.content) < 200:
                 with open('sm_cookie', 'wb') as f:
                     f.write(re.findall(r'cookie=\"(.+?)\"', result.content)[0])
