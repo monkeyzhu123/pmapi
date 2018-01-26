@@ -7,13 +7,12 @@ import random
 from flask import jsonify, make_response
 import urllib2
 from lxml import etree
-import time
 import os
-import json
+import linecache
+
 
 app = Flask(__name__)
 app.debug = True
-
 
 def clean_str_for_line_break(pre_str):
     while True:
@@ -25,13 +24,7 @@ def clean_str_for_line_break(pre_str):
 
 
 def select_user_agent(file_name='user-agents.txt'):
-    user_agent_file = open(file_name)
-    line = next(user_agent_file)
-    for num, aline in enumerate(user_agent_file):
-        if random.randrange(num + 2):
-            continue
-        line = aline.replace('\n', '')
-    return line
+    return linecache.getline(file_name, random.randint(1, 4126)).replace('\n', '')
 
 
 def create_request_cookie(cookie_file):
@@ -240,6 +233,7 @@ def get_ranking_and_url():
                     content_dict['domain'] = "".join(current_xpath.xpath('div//a[@class="c-showurl"]//text()'))
                 content_list.append(content_dict)
     elif search_engine_type == "sm":
+        headers['User-Agent'] = select_user_agent(file_name='user_agent_for_mobile.txt')
         headers['Host'] = "yz.m.sm.cn"
         if os.path.exists('sm_cookie'):
             try:
@@ -279,6 +273,7 @@ def get_ranking_and_url():
             content_dict['title'] = title
             content_list.append(content_dict)
     elif search_engine_type == "m_baidu":
+        headers['User-Agent'] = select_user_agent(file_name='user_agent_for_mobile.txt')
         headers['Host'] = "m.baidu.com"
         for pn in range(0,21,10):
             result = requests.get(url + "&pn=" + str(pn), headers=headers)
