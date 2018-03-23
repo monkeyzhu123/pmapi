@@ -165,10 +165,13 @@ def get_ranking_and_url():
                     try:
                         count_timer = count_timer + 1
                         content_dict = {}
-                        re_rule = 'h3/a/@href'
+                        re_rule = 'h3/a/@data-url'
                         title_rule = 'h3/a//text()'
-                        pre_url = current_xpath.xpath(re_rule)[0]
-                        true_url = urllib2.unquote(re.findall(r"url=(.+?)&", pre_url)[0])
+
+                        # pre_url = current_xpath.xpath(re_rule)[0]
+                        true_url = current_xpath.xpath(re_rule)[0]
+                        # true_url = urllib2.unquote(re.findall(r"url=(.+?)&", pre_url)[0])
+
                         content_dict['true_url'] = true_url
                         content_dict['ranking'] = count_timer
                         content_dict['title'] = "".join(current_xpath.xpath(title_rule))
