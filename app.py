@@ -10,9 +10,9 @@ from lxml import etree
 import os
 import linecache
 
-
 app = Flask(__name__)
 app.debug = True
+
 
 def clean_str_for_line_break(pre_str):
     while True:
@@ -24,7 +24,9 @@ def clean_str_for_line_break(pre_str):
 
 
 def select_user_agent(file_name='user-agents.txt'):
-    return linecache.getline(file_name, random.randint(1, 4126)).replace('\n', '')
+    with open(file_name) as f:
+        total_num = sum(1 for _ in f)
+    return linecache.getline(file_name, random.randint(1, total_num)).replace('\n', '')
 
 
 def create_request_cookie(cookie_file):
@@ -34,6 +36,7 @@ def create_request_cookie(cookie_file):
             name, value = line.strip().split('=', 1)
             cookies[name] = value
     return cookies
+
 
 def get_id_content_left_for_baidu_search_page(url=None, headers=None):
     '''    获得百度搜索结果页中id=content_left的网页内容    '''
@@ -231,7 +234,7 @@ def get_ranking_and_url():
                 content_dict['title'] = title
                 try:
                     content_dict['domain'] = \
-                    "".join(current_xpath.xpath('div//a[@class="c-showurl"]//text()')).split("/")[0]
+                        "".join(current_xpath.xpath('div//a[@class="c-showurl"]//text()')).split("/")[0]
                 except:
                     content_dict['domain'] = "".join(current_xpath.xpath('div//a[@class="c-showurl"]//text()'))
                 content_list.append(content_dict)
@@ -278,14 +281,14 @@ def get_ranking_and_url():
     elif search_engine_type == "m_baidu":
         headers['User-Agent'] = select_user_agent(file_name='user_agent_for_mobile.txt')
         headers['Host'] = "m.baidu.com"
-        for pn in range(0,21,10):
+        for pn in range(0, 21, 10):
             result = requests.get(url + "&pn=" + str(pn), headers=headers)
             selector = etree.HTML(result.content)
             for current_xpath in selector.xpath('//div[@tpl="www_normal"]'):
                 content_dict = {}
                 title = "".join(current_xpath.xpath('div[@class="c-container"]/a/h3//text()'))
                 # type 1 is normal search result
-                content_dict['ranking'] = str(int(current_xpath.xpath('@order')[0])+pn)
+                content_dict['ranking'] = str(int(current_xpath.xpath('@order')[0]) + pn)
                 content_dict['title'] = title
                 content_dict['true_url'] = eval(current_xpath.xpath('@data-log')[0])['mu']
                 content_list.append(content_dict)
@@ -293,6 +296,50 @@ def get_ranking_and_url():
     response.headers['Access-Control-Allow-Origin'] = 'http://pm.yunwangke.com'
     response.headers['Access-Control-Allow-Methods'] = 'POST,GET'
     response.headers['Access-Control-Allow-Headers'] = 'x-requested-with,content-type'
+    return response
+
+
+@app.route('/check_article_collected', methods=['GET'])
+def check_article_collected():
+    url = request.args.get('url')
+    headers = {
+        'User-Agent': select_user_agent(),
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, sdch, br',
+        'Accept-Language': 'zh-CN,zh;q=0.8,en;q=0.6',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Host': 'www.baidu.com',
+        'Pragma': 'no-cache',
+        'Upgrade-Insecure-Requests': '1',
+    }
+    article_link = "https://www.baidu.com/s?ie=utf-8&wd=site%3A({0})%20inurl%3A/{1}".format(url.split("/")[2],
+                                                                                            "/".join(
+                                                                                                url.split("/")[3:]))
+    result = requests.get(url=article_link, headers=headers)
+    soup = BeautifulSoup(result.content, 'html.parser')
+    response = {}
+    if result.status_code == 200:
+        if soup.find(attrs={'id': 'content_left'}):
+            response['title'] = re.sub(r'\d{4}.*', '', soup.find(id="1").h3.a.get_text())
+            response['status'] = 1
+            response['info'] = u"已收录"
+        # class is python build-in key word,use attrs avoid this
+        elif soup.find(attrs={'class': 'content_none'}):
+            response['status'] = 0
+            response['info'] = u"未收录1"
+        else:
+            # with open('disable_user_agent.txt', 'a+') as f:
+            #     f.write(headers['User-Agent'] + "\n")
+            print result.status_code, headers['User-Agent']
+            response['status'] = 2
+            response['info'] = u"未收录2"
+    else:
+        print result.status_code, headers['User-Agent']
+        response['status'] = 3
+        response['info'] = u"查询错误"
+
+    response = make_response(jsonify(response))
     return response
 
 
