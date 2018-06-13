@@ -303,7 +303,7 @@ def get_ranking_and_url():
 def check_article_collected():
     url = request.args.get('url')
     headers = {
-        'User-Agent': 'Opera/9.80 (Android 4.1.2; Linux; Opera Mobi/ADR-1305251841) Presto/2.11.355 Version/12.10',
+        'User-Agent': select_user_agent(),
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Encoding': 'gzip, deflate, sdch, br',
         'Accept-Language': 'zh-CN,zh;q=0.8,en;q=0.6',
