@@ -303,7 +303,7 @@ def get_ranking_and_url():
 def check_article_collected():
     url = request.args.get('url')
     headers = {
-        'User-Agent': select_user_agent(),
+        'User-Agent': 'Opera/9.80 (Android 4.1.2; Linux; Opera Mobi/ADR-1305251841) Presto/2.11.355 Version/12.10',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Encoding': 'gzip, deflate, sdch, br',
         'Accept-Language': 'zh-CN,zh;q=0.8,en;q=0.6',
@@ -316,6 +316,7 @@ def check_article_collected():
     article_link = "https://www.baidu.com/s?ie=utf-8&wd=site%3A({0})%20inurl%3A/{1}".format(url.split("/")[2],
                                                                                             "/".join(
                                                                                                 url.split("/")[3:]))
+    # https://www.baidu.com/s?ie=utf-8&wd=site%3A(e.chengdu.cn)%20inurl%3A/syxw/26740579.html
     result = requests.get(url=article_link, headers=headers)
     soup = BeautifulSoup(result.content, 'html.parser')
     response = {}
