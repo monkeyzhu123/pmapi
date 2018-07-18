@@ -313,10 +313,8 @@ def check_article_collected():
         'Pragma': 'no-cache',
         'Upgrade-Insecure-Requests': '1',
     }
-    article_link = "https://www.baidu.com/s?ie=utf-8&wd=site%3A({0})%20inurl%3A/{1}".format(url.split("/")[2],
-                                                                                            "/".join(
-                                                                                                url.split("/")[3:]))
-    # https://www.baidu.com/s?ie=utf-8&wd=site%3A(e.chengdu.cn)%20inurl%3A/syxw/26740579.html
+    article_link = "https://www.baidu.com/s?ie=utf-8&wd={0}".format(url,)
+    # https://www.baidu.com/s?ie=utf-8&wd=http://e.chengdu.cn/syxw/26740579.html
     result = requests.get(url=article_link, headers=headers)
     soup = BeautifulSoup(result.content, 'html.parser')
     response = {}
@@ -327,6 +325,7 @@ def check_article_collected():
             response['info'] = u"已收录"
         # class is python build-in key word,use attrs avoid this
         elif soup.find(attrs={'class': 'content_none'}):
+            response['title'] = soup.find(attrs={'class':"nors"}).p.get_text()
             response['status'] = 0
             response['info'] = u"未收录1"
         else:
