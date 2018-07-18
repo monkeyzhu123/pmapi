@@ -301,6 +301,7 @@ def get_ranking_and_url():
 
 @app.route('/check_article_collected', methods=['GET'])
 def check_article_collected():
+    # status = ((0, '未收1'), (1, '收录'), (2, '未收2'), (3, '查询错误'))
     url = request.args.get('url')
     headers = {
         'User-Agent': select_user_agent(),
@@ -322,22 +323,20 @@ def check_article_collected():
         if soup.find(attrs={'id': 'content_left'}):
             response['title'] = re.sub(r'\d{4}.*', '', soup.find(id="1").h3.a.get_text())
             response['status'] = 1
-            response['info'] = u"已收录"
         # class is python build-in key word,use attrs avoid this
         elif soup.find(attrs={'class': 'content_none'}):
             response['title'] = soup.find(attrs={'class':"nors"}).p.get_text()
             response['status'] = 0
-            response['info'] = u"未收录1"
         else:
             # with open('disable_user_agent.txt', 'a+') as f:
             #     f.write(headers['User-Agent'] + "\n")
             print result.status_code, headers['User-Agent']
+            response['title'] = '疑似被屏蔽'
             response['status'] = 2
-            response['info'] = u"未收录2"
     else:
         print result.status_code, headers['User-Agent']
+        response['title'] = '查询错误'
         response['status'] = 3
-        response['info'] = u"查询错误"
 
     response = make_response(jsonify(response))
     return response
