@@ -10,6 +10,7 @@ from lxml import etree
 import os
 import linecache
 
+
 app = Flask(__name__)
 app.debug = True
 
@@ -295,6 +296,67 @@ def get_ranking_and_url():
     response = make_response(jsonify({'status': 200, 'content': content_list}))
     response.headers['Access-Control-Allow-Origin'] = 'http://pm.yunwangke.com'
     response.headers['Access-Control-Allow-Methods'] = 'POST,GET'
+    response.headers['Access-Control-Allow-Headers'] = 'x-requested-with,content-type'
+    return response
+
+
+@app.route('/hlt_get_ranking_and_url', methods=['GET'])
+def hlt_get_ranking_and_url():
+    keyword = request.args.get('keyword','')
+    code = request.args.get('code','')
+    search_engine_type = request.args.get('search_engine_type')
+    # print search_engine_type
+    if not keyword or not code or not search_engine_type:
+        response = {'status': 500, 'message': 'args error'}
+        return jsonify(response)
+    headers = {
+        'User-Agent': select_user_agent(),
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, sdch, br',
+        'Accept-Language': 'zh-CN,zh;q=0.8,en;q=0.6',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Pragma': 'no-cache',
+        'Upgrade-Insecure-Requests': '1',
+    }
+    content_list = []
+
+    if search_engine_type == "baidu":
+        headers['Host'] = "www.baidu.com"
+        result = requests.get("https://www.baidu.com/s?wd={0}".format(keyword,), headers=headers)
+        selector = etree.HTML(result.content)
+        for current_xpath in selector.xpath(
+                '//div[@id="content_left"]/div[contains(@tpl, "se_com_default")]'):
+            if code in ''.join(current_xpath.xpath('.//div[@class="c-abstract"]//text()')):
+                link_xpath = 'h3/a/@href'
+                content_dict = {}
+                pre_url = current_xpath.xpath(link_xpath)[0]
+                title = "".join(current_xpath.xpath('h3/a//text()'))
+                # type 1 is normal search result
+                content_dict['baidu_index_url'] = pre_url
+                content_dict['ranking'] = current_xpath.xpath('@id')[0]
+                result = requests.head(url=pre_url, headers=headers)
+                content_dict['true_url'] = result.headers['Location']
+                content_dict['title'] = title
+                content_list.append(content_dict)
+    elif search_engine_type == "m_baidu":
+        headers['User-Agent'] = select_user_agent(file_name='user_agent_for_mobile.txt')
+        headers['Host'] = "m.baidu.com"
+        result = requests.get("https://m.baidu.com/s?wd={0}".format(keyword), headers=headers)
+        selector = etree.HTML(result.content)
+        for current_xpath in selector.xpath('//div[@tpl="www_normal"]'):
+            content_dict = {}
+            title = "".join(current_xpath.xpath('div[@class="c-container"]/a/h3//text()'))
+            # type 1 is normal search result
+            content_dict['ranking'] = str(int(current_xpath.xpath('@order')[0]))
+            content_dict['true_url'] = eval(current_xpath.xpath('@data-log')[0])['mu']
+            content_dict['title'] = title
+            content_list.append(content_dict)
+    else:
+        content_list = []
+    response = make_response(jsonify({'status': 200, 'content': content_list}))
+    response.headers['Access-Control-Allow-Origin'] = 'http://pm.yunwangke.com'
+    response.headers['Access-Control-Allow-Methods'] = 'GET'
     response.headers['Access-Control-Allow-Headers'] = 'x-requested-with,content-type'
     return response
 
